@@ -1,5 +1,8 @@
 Revision history for Net-SMS-Optimus
 
+0.02    Mon Mar 5/14:27:52
+        Forgot to put sms_optimus on manifest
+
 0.01    Sun Mar 4/23:13:25
         First version, released on an unsuspecting world.
 
