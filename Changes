@@ -1,5 +1,8 @@
 Revision history for Net-SMS-Optimus
 
+0.03    Tue Mar 6/17:34:32
+        Add a missing depedency
+
 0.02    Mon Mar 5/14:27:52
         Forgot to put sms_optimus on manifest
 

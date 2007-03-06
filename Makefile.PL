@@ -13,6 +13,7 @@ WriteMakefile(
         'LWP::UserAgent' => 2.033,
         'HTTP::Cookies'  => 1.39,
         'HTML::Form'     => 1.054,
+        'Crypt::SSLeay'  => 0.53,
     },
     EXE_FILES => [ 'lib/sms_optimus' ],
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

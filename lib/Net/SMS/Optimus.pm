@@ -14,11 +14,11 @@ Net::SMS::Optimus - Send SMS through www.optimus.pt
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our (@ISA)    = qw/Exporter/;
 our (@EXPORT) = qw/send_sms/;
 
