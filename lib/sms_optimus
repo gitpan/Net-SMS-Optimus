@@ -6,19 +6,15 @@ use Net::SMS::Optimus;
 
 my $username = shift or usage();
 my $password = shift or usage();
-my $numbers  = shift or usage();
+my $number   = shift or usage();
 my $msg      = shift or usage();
 
-# Try to split the numbers
-my @numbers = split /\|/, $numbers;
-
-send_sms($username, $password, \@numbers, $msg);
+send_sms($username, $password, $number, $msg);
 
 sub usage {
     print <<EOF;
-sms_optimus "username" "password" "931234567|937654321" "msg"
+sms_optimus "username" "password" "931234567" "msg"
 
-The numbers are separated by the pipe. Maximum 3 numbers.
 The message should not be larger than 152 characters.
 
 EOF
@@ -31,7 +27,7 @@ sms_optimus - Command Line interface to Net::SMS::Optimus
 
 =head1 USAGE
 
-Please run the script without parameters to see the usage.. I like DRY :)
+Please run the script without parameters to see the usage.. I like to DRY :)
 
 =cut
 

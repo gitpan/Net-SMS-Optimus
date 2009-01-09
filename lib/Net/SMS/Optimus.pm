@@ -7,6 +7,7 @@ use Carp;
 use LWP::UserAgent;
 use HTTP::Cookies;
 use HTML::Form;
+use URI;
 
 =head1 NAME
 
@@ -14,11 +15,11 @@ Net::SMS::Optimus - Send SMS through www.optimus.pt
 
 =head1 VERSION
 
-Version 0.03
+Version 0.05
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.05';
 our (@ISA)    = qw/Exporter/;
 our (@EXPORT) = qw/send_sms/;
 
@@ -30,7 +31,7 @@ www.optimus.pt portal.
 
     use Net::SMS::Optimus;
 
-    send_sms($username, $password, $numbers, $msg);
+    send_sms($username, $password, $number, $msg);
 
 =head1 EXPORT
 
@@ -53,10 +54,9 @@ The username to the portal
 
 ...
 
-=item numbers
+=item number
 
-An array reference holding at maximum 3 numbers to
-send the SMS.
+A string containing the destination number
 
 =item message
 
@@ -73,15 +73,13 @@ and returns.
 =cut
 
 sub send_sms {
-    my ($username, $password, $numbers, $message) = @_;
+    my ($username, $password, $number, $message) = @_;
 
     # Do some checks
     croak "Username required" unless $username;
     croak "Password required" unless $password;
-    croak "Numbers must be an anonymous array" unless ($numbers && (ref $numbers eq 'ARRAY'));
-    croak "You must specify at least 1 number"      unless (scalar @{$numbers}) > 0;
-    croak "You must specify no more than 3 numbers" unless (scalar @{$numbers}) < 4;
-    croak "You must specify a message asshole" unless $message;
+    croak "Number required" unless $number;
+    croak "You must specify a message, asshole" unless $message;
     croak "Your message should be no more than 152 chars" unless (length $message) <= 152;
 
     # Initialize the browser
@@ -92,46 +90,42 @@ sub send_sms {
     $browser->env_proxy;
     
     # Fase 1: Login
-    my $res = $browser->get('http://www.optimus.pt/Site+Optimus/Massmarket');
+    my $res = $browser->get('http://optimus.pt/particulares/omeuoptimus/');
     $res->is_success or die "Error reading from www.optimus.pt (Phase 1)\n";
     
     my @forms = HTML::Form->parse($res);
-    @forms = grep $_->attr("id") eq "formRegisto", @forms;
+    @forms = grep $_->attr("id") eq "aspnetForm", @forms;
     die "No login form found (Phase 1)\n" unless @forms;
     my $form = shift @forms;
     
-    $form->value('username', $username);
-    $form->value('password', $password);
+    $form->value('ctl00$MainContentPlaceHolder$UserAuth1$TxtUsername', $username);
+    $form->value('ctl00$MainContentPlaceHolder$UserAuth1$TxtPassword', $password);
     
     $res = $browser->request($form->click);
     $res->is_success or die "Error submiting login form (Phase 1)\n";
     
-    $res->content =~ /Bem vindo/ or die "Check username and/or password (Phase 1)\n";
+    $res->content =~ /Logout/ or die "Check username and/or password (Phase 1)\n";
     
-    # Fase 2: Obter a form de SMS
-    $res = $browser->get('http://www.optimus.pt/Site+Optimus/MassMarket/Servicos/Mensagens/sms/EnviarSMS.htm');
-    $res->is_success or die "Error getting SMS form (Phase 2)\n";
-    
-    $res->content =~ /Tem (\d+) SMS gr/;
+    # Fase 2: Obter a form de SMS    
+    $res->content =~ /id\=\"totalFreeSms\"\>(\d+)\</;
     print "Free SMS: $1\n";
     
     @forms = HTML::Form->parse($res);
-    @forms = grep $_->attr("id") eq "web2sms", @forms;
+    @forms = grep $_->attr("id") eq "aspnetForm", @forms;
     die "No sms form found (Phase 2)\n" unless @forms;
     $form = shift @forms;
     
     # Fase 3: Preencher a form e enviar
-    $form->value('Text1',     $numbers->[0]);
-    $form->value('Text2',     $numbers->[1]) if $numbers->[1];
-    $form->value('Text3',     $numbers->[2]) if $numbers->[2];
-    $form->value('txtSMSMsg', $message);
-    $form->find_input('Header1:Top:searchButton')->readonly(0);
-    $form->find_input('Header1:Top:searchButton')->disabled(1);
-    
-    $res = $browser->request($form->click);
+    my $url = URI->new('http://optimus.pt/OMeuOptimus/OptimusOnlineAjaxCalls/SendSms.aspx');
+    $url->query_form(
+      To => $number,
+      Text => $message,
+      Type => 'normal'
+    );
+    $res = $browser->get($url);   
     $res->is_success or die "Error submiting SMS form (Phase 3)\n";
     
-    $res->content =~ /Foram enviados SMS/ or die "Error sending SMS (Phase 3)\n";
+    $res->content =~ /Resultados\>\<Correctos/ or die "Error sending SMS (Phase 3)\n";
     print "SMS Sent :)\n";
 }
 
